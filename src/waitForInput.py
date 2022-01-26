@@ -31,6 +31,4 @@ def microphoneReady():
             f.write(text)
             f.close
 
-        
-
 

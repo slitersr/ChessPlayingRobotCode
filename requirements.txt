@@ -1,2 +1,3 @@
 #pip3 install SpeechRecognition pydub
 #pip3 install python-chess
+#pip install PyAudio-0.2.11-cp39-cp39-win_amd64.whl  --------- the file is in data and was downloaded from https://www.lfd.uci.edu/~gohlke/pythonlibs/#pyaudio

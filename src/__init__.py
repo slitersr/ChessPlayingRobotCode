@@ -11,16 +11,64 @@ def main():
     #create board
     board = chess.Board()
 
+    #player will always play as white for now, will start with first move
+    playerTurn = True
+
     #while the players have not agreed to a draw
     while not board.is_game_over():
 
-        #read input from user
-        waitForInput.microphoneReady()
-        #read user inputted move
-        with open('C:/Users/seans/Desktop/SeniorDesignI/ProjectCode/' + 'playerInput.txt') as f:
-            sk1Key = f.read()
-            f.close
+        # check if checkmate. if not continue game
+
+        #if it is players turn have player enter move/ move will be played by arm
+        if(playerTurn):
+            #read input from user
+            player_move = waitForInput.microphoneReady()
+
+            #convert player move
+
+            #if player inputted move is not legal then loop back and ask for move again
+            while(not chess.Move.from_uci(player_move) in board.legal_moves):
+                player_move = input("Enter move")
+
+            # make sure move satisfies mate condition. If not pick new move
+
+            board.push_san(player_move)
+
+            # commit move on robot
+
+            #read user inputted move
+            # with open('C:/Users/seans/Desktop/SeniorDesignI/ProjectCode/' + 'playerInput.txt') as f:
+            #     playerInput = f.read()
+            #     f.close
+
+            #make it the engine's turn after the player has gone
+            playerTurn = False
+
+        #if it's the robots turn, calculate engineResult.move and perform move with robot
+        else:   
+            # evaluate best move
+            engineResult = engine.play(board, chess.engine.Limit(time=0.1))
+            # perform move
+            board.push(engineResult.move)
+
+            # do game checks (checkmate/mate)
+
+
+            #make it the players move again
+            playerTurn = True
+
+
+
+
+
+        ####do stuff with player input
         
+
+
+
+
+
+
         #if it is not stalemate or checkmate end the game with proper result
         if(not board.is_stalemate and not board.is_checkmate):
             #play move inputted by player
