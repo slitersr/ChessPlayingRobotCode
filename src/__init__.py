@@ -1,8 +1,7 @@
+from distutils.errors import UnknownFileError
 import chess
 import chess.engine
 import waitForInput
-import string
-
 
 
 def main():
@@ -23,34 +22,47 @@ def main():
 
         #if it is players turn have player enter move/ move will be played by arm
         if(playerTurn):
-            inputVar = input("Press enter to start recording...")
+            input("Press enter to start recording...")
 
             #read input from user
             playerMoveText = waitForInput.microphoneReady()
 
             #make lowercase text
             playerMoveText = playerMoveText.lower()
-
             #get rid of any whitespace in voice inputted string
             playerMoveText = playerMoveText.replace(' ', '')
 
-            #if player inputted move is not legal then loop back and ask for move again
-            while(chess.Move.from_uci(playerMoveText) not in board.legal_moves):
-                inputVar = input("Press enter to start recording...")
-                playerMoveText = waitForInput.microphoneReady()
+            #while loop below handles incorrect input
+            condition = False
+            while(not condition):
+                try:
+                    #if player inputted move is not legal then loop back and ask for move again
+                    if(chess.Move.from_uci(playerMoveText) not in board.legal_moves):
+                        input("Illegal move, press enter to start recording again...")
+                        playerMoveText = waitForInput.microphoneReady()
+                        playerMoveText = playerMoveText.lower()
+                        playerMoveText = playerMoveText.replace(' ', '')
+                    else:
+                        condition = True
+                except BaseException as e:
+                    input("Illegal move, press enter to start recording again...")
+                    playerMoveText = waitForInput.microphoneReady()
+                    playerMoveText = playerMoveText.lower()
+                    playerMoveText = playerMoveText.replace(' ', '')
+                    continue
+                break
+                
 
             
             # make sure move satisfies mate condition. If not pick new move
             board.push_san(playerMoveText)
 
-            
             # here is where we would move the physical board peice
             # firstHalfplayerMoveText = playerMoveText.split(' ')[0]
             # secondHalfplayerMoveText = playerMoveText.split(' ')[1]
             #robot.move(firstHalfplayerMoveText, secondHalfplayerMoveText)
 
             print("\nPLAYER MOVE\n")
-
 
             print(board)
 
@@ -59,10 +71,6 @@ def main():
 
         #if it's the robots turn, calculate engineResult.move and perform move with robot
         else:   
-
-            # see if engine is in check  here.
-
-
             # evaluate best move
             engineResult = engine.play(board, chess.engine.Limit(time=0.1))
             # perform move
