@@ -32,8 +32,8 @@ def main():
             playerMoveText = playerMoveText.replace(' ', '')
 
             #while loop below handles incorrect input
-            condition = False
-            while(not condition):
+            legalPlayerInput = False
+            while(not legalPlayerInput):
                 try:
                     #if player inputted move is not legal then loop back and ask for move again
                     if(chess.Move.from_uci(playerMoveText) not in board.legal_moves):
@@ -42,9 +42,9 @@ def main():
                         playerMoveText = playerMoveText.lower()
                         playerMoveText = playerMoveText.replace(' ', '')
                     else:
-                        condition = True
+                        legalPlayerInput = True
                 except BaseException as e:
-                    input("Illegal move, press enter to start recording again...")
+                    input("Incorrect input, press enter to start recording again...")
                     playerMoveText = waitForInput.microphoneReady()
                     playerMoveText = playerMoveText.lower()
                     playerMoveText = playerMoveText.replace(' ', '')
