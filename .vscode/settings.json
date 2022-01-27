@@ -1,0 +1,9 @@
+{
+    "python.analysis.extraPaths": [
+        "./ax12Control",
+        "./src",
+        "./src",
+        "./src",
+        "./src"
+    ]
+}

@@ -7,7 +7,7 @@ import waitForInput
 def main():
 
     #SimpleEngine spawns event loop and creates engine instance using stockfish.exe
-    engine = chess.engine.SimpleEngine.popen_uci(r"C:/Users/seans/Desktop/SeniorDesignI/ProjectCode/src/stockfish_14_win_x64_avx2/stockfish_14_x64_avx2.exe")
+    engine = chess.engine.SimpleEngine.popen_uci(r"C:/Users/seans/Desktop/SeniorDesignI/ProjectCode/data/stockfish_14_win_x64_avx2/stockfish_14_x64_avx2.exe")
 
     #create board
     board = chess.Board()
@@ -26,7 +26,6 @@ def main():
 
             #read input from user
             playerMoveText = waitForInput.microphoneReady()
-
             #make lowercase text
             playerMoveText = playerMoveText.lower()
             #get rid of any whitespace in voice inputted string
@@ -52,15 +51,13 @@ def main():
                     continue
                 break
                 
-
-            
-            # make sure move satisfies mate condition. If not pick new move
+            # make players move
             board.push_san(playerMoveText)
 
             # here is where we would move the physical board peice
-            # firstHalfplayerMoveText = playerMoveText.split(' ')[0]
-            # secondHalfplayerMoveText = playerMoveText.split(' ')[1]
-            #robot.move(firstHalfplayerMoveText, secondHalfplayerMoveText)
+            # fromSquare = playerMoveText.split(' ')[0]
+            # toSquare = playerMoveText.split(' ')[1]
+            #robot.move(fromSquare, toSquare)
 
             print("\nPLAYER MOVE\n")
 
@@ -69,7 +66,7 @@ def main():
             #make it the engine's turn after the player has gone
             playerTurn = False
 
-        #if it's the robots turn, calculate engineResult.move and perform move with robot
+        #if it's the robots turn, calculate engineResult and perform move with robot
         else:   
             # evaluate best move
             engineResult = engine.play(board, chess.engine.Limit(time=0.1))
@@ -94,10 +91,6 @@ def main():
 
     #end of the game
     engine.quit()
-
-
-
-
 
 
 
