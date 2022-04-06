@@ -4,7 +4,9 @@ from robot import Gripper
 from time import sleep
 import chess
 import chess.engine
+from chess import is_capture
 import waitForInput
+
 
 def main():
 
@@ -64,6 +66,9 @@ def main():
             # perform players move on stockfish
             board.push_san(playerMoveTextEdited)
 
+            #store current move in move variable to check conditions
+            move = board.push_san(playerMoveTextEdited) # if not working change parse_san() to push_san()
+
             #Get the substrings for player move
             fromSquare = playerMoveText.split(' ')[0]
             fromSquare = fromSquare.lower()
@@ -74,6 +79,24 @@ def main():
             currentPiece = board.piece_at(chess.parse_square(toSquare))
             currentPiece = str(currentPiece)
             currentPiece = currentPiece.lower()
+
+            #determine if it is a capturing move, need arm to remove captured piece
+            if(board.is_capture(move)):
+                capture = True
+            else:
+                capture = False
+
+            # #determine if it is a castling move, need arm to handle this special case (move both king and rook)
+            # if(board.is_castling(move)):
+            #     castling = True
+            # else:
+            #     castling = False
+            
+            # #determine if it is a en passant move, need arm to handle this special case
+            # if(board.is_en_passant(move)):
+            #     enPassant = True
+            # else:
+            #     enPassant = False
 
             # Send in move to movement engine
             arm.move(fromSquare, toSquare, currentPiece)
