@@ -4,7 +4,6 @@ from robot import Gripper
 from time import sleep
 import chess
 import chess.engine
-from chess import is_capture
 import waitForInput
 
 
@@ -61,24 +60,13 @@ def main():
                 except BaseException as e:
                     print("Incorrect input. Try again.")
                 continue
+            
 
-                
-            # perform players move on stockfish
-            board.push_san(playerMoveTextEdited)
+
 
             #store current move in move variable to check conditions
             move = board.push_san(playerMoveTextEdited) # if not working change parse_san() to push_san()
 
-            #Get the substrings for player move
-            fromSquare = playerMoveText.split(' ')[0]
-            fromSquare = fromSquare.lower()
-            toSquare = playerMoveText.split(' ')[1]
-            toSquare = toSquare.lower()
-
-            #get current piece
-            currentPiece = board.piece_at(chess.parse_square(toSquare))
-            currentPiece = str(currentPiece)
-            currentPiece = currentPiece.lower()
 
             #determine if it is a capturing move, need arm to remove captured piece
             if(board.is_capture(move)):
@@ -97,6 +85,21 @@ def main():
             #     enPassant = True
             # else:
             #     enPassant = False
+
+                
+            # perform players move on stockfish
+            board.push_san(playerMoveTextEdited)
+
+            #Get the substrings for player move
+            fromSquare = playerMoveText.split(' ')[0]
+            fromSquare = fromSquare.lower()
+            toSquare = playerMoveText.split(' ')[1]
+            toSquare = toSquare.lower()
+
+            #get current piece
+            currentPiece = board.piece_at(chess.parse_square(toSquare))
+            currentPiece = str(currentPiece)
+            currentPiece = currentPiece.lower()
 
             # Send in move to movement engine
             arm.move(fromSquare, toSquare, currentPiece)
