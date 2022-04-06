@@ -144,51 +144,57 @@ class Arm:
         print("Arm calibration complete!")
 
     # BROKEN. Will continue research later
-    def degradingMove(self, goalPosition):
-        currentPosition = self.get_present_position()
+    # def degradingMove(self, goalPosition):
+    #     currentPosition = self.get_present_position()
 
-        distance = abs(currentPosition - goalPosition)
+    #     distance = abs(currentPosition - goalPosition)
 
-        if(goalPosition > currentPosition):
-            for count in range(5):
-                self.set_goal_position(currentPosition)
-                sleep((100-count)/1000)
-                currentPosition += 20
-            while(currentPosition != goalPosition - 100):
-                self.set_goal_position(currentPosition)
-                currentPosition += 20
-            for count in range(5):
-                self.set_goal_position(currentPosition)
-                sleep((count-100)/1000)
-                currentPosition += 20  
-        else:
-            for count in range(5):
-                self.set_goal_position(currentPosition)
-                sleep((100-count)/1000)
-                currentPosition -= 20
-            while(currentPosition != goalPosition):
-                self.set_goal_position(currentPosition)
-                currentPosition -= 20
-            for count in range(5):
-                self.set_goal_position(currentPosition)
-                sleep((count-100)/1000)
-                currentPosition -= 20
+    #     if(goalPosition > currentPosition):
+    #         for count in range(5):
+    #             self.set_goal_position(currentPosition)
+    #             sleep((100-count)/1000)
+    #             currentPosition += 20
+    #         while(currentPosition != goalPosition - 100):
+    #             self.set_goal_position(currentPosition)
+    #             currentPosition += 20
+    #         for count in range(5):
+    #             self.set_goal_position(currentPosition)
+    #             sleep((count-100)/1000)
+    #             currentPosition += 20  
+    #     else:
+    #         for count in range(5):
+    #             self.set_goal_position(currentPosition)
+    #             sleep((100-count)/1000)
+    #             currentPosition -= 20
+    #         while(currentPosition != goalPosition):
+    #             self.set_goal_position(currentPosition)
+    #             currentPosition -= 20
+    #         for count in range(5):
+    #             self.set_goal_position(currentPosition)
+    #             sleep((count-100)/1000)
+    #             currentPosition -= 20
 
     def move(self, startSquare, finishSquare, piece):
-        print(piece)
+        
+        # get row and column of starting position
         col_start = ord(startSquare[0]) - 64 - 1
         row_start = int(startSquare[1]) - 1        
 
+        # get row and column of target position
         col_end = ord(finishSquare[0]) - 64 - 1
         row_end = int(finishSquare[1]) - 1
 
+        # set first ax12 to goal position given predetermined distance in 'joint1_table'
         joint_1.set_goal_position(boardPositions.joint1_table[row_start][col_start])
         sleep(.1)
+
+        # set second ax12 to goal position given predetermined distance in 'joint2_table'
         joint_2.set_goal_position(boardPositions.joint2_table[row_start][col_start])
         
         # maybe make this according to distance rather than constant time so its more efficient
         sleep(5)
         
+        #
         self.gripper.pickup(piece, startSquare)
 
         joint_1.set_goal_position(boardPositions.joint1_table[row_end][col_end])

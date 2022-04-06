@@ -1,5 +1,4 @@
 from distutils.errors import UnknownFileError
-from boardTracker import BoardTracker
 from robot import Arm
 from robot import Gripper
 from time import sleep
@@ -31,7 +30,6 @@ def main():
     arm.init(gripper)
     arm.calibrate()
         
-    boardTracker = BoardTracker()
 
     #while game is not over, keep looping
     while (not board.is_game_over()) and (not board.is_checkmate()) and (not board.is_stalemate()):
@@ -45,6 +43,7 @@ def main():
                 try:
                     response = input("Press enter to start recording...")
                     
+                    #dev tool for inputting move through keyboard by inputting '1'
                     if response == 1:
                         playerMoveText = input("Enter move: ")                       
                     else:
@@ -53,8 +52,6 @@ def main():
                     playerMoveTextEdited = playerMoveText.lower()
                     playerMoveTextEdited = playerMoveTextEdited.replace(' ', '')
                         
-#                     if len(playerMoveText) > 5 or len(playerMoveText) < 5:
-#                         print("Incorrect input. Try again.")
                     if chess.Move.from_uci(playerMoveTextEdited) not in board.legal_moves:
                         print("Illegal move. Try again.")
                     else:
@@ -64,65 +61,22 @@ def main():
                 continue
 
                 
-#             response = input("Press enter to start recording...")
-#             
-#             if response == 1:
-#                 #read input from user
-#                 playerMoveText = input("Enter move: ")                       
-#             else:
-#                 playerMoveText = waitForInput.microphoneReady()
-#                 
-#             #make lowercase text
-#             playerMoveTextEdited = playerMoveText.lower()
-#             #get rid of any whitespace in voice inputted string
-#             playerMoveTextEdited = playerMoveTextEdited.replace(' ', '')
-# 
-#             #while loop below handles incorrect input
-#             legalPlayerInput = False
-#             while(not legalPlayerInput):
-#                 try:
-#                     #if player inputted move is not legal then loop back and ask for move again
-#                     if(chess.Move.from_uci(playerMoveTextEdited) not in board.legal_moves):
-#                         response = input("Illegal move, press enter to start recording again...")
-#                         if response == 1:
-#                             #read input from user
-#                             playerMoveText = input("Enter move: ")                       
-#                         else:
-#                             playerMoveText = waitForInput.microphoneReady()
-#                         playerMoveTextEdited = playerMoveText.lower()
-#                         playerMoveTextEdited = playerMoveTextEdited.replace(' ', '')
-#                     else:
-#                         legalPlayerInput = True
-#                 except BaseException as e:
-#                     response = input("Incorrect input, press enter to start recording again...")
-#                     if response == 1:
-#                         #read input from user
-#                         playerMoveText = input("Enter move: ")                       
-#                     else:
-#                         playerMoveText = waitForInput.microphoneReady()
-#                     playerMoveTextEdited = playerMoveText.lower()
-#                     playerMoveTextEdited = playerMoveTextEdited.replace(' ', '')
-#                     continue
-#                 break
-                
             # perform players move on stockfish
             board.push_san(playerMoveTextEdited)
 
-            # here is where we would move the physical board peice
+            #Get the substrings for player move
             fromSquare = playerMoveText.split(' ')[0]
+            fromSquare = fromSquare.lower()
             toSquare = playerMoveText.split(' ')[1]
+            toSquare = toSquare.lower()
 
-            # Checks if the board is occupied by opposing team and 
-            if BoardTracker.checkIfOccupied(toSquare) == 'b':
-                arm.remove(toSquare, 'b')
-            elif BoardTracker.checkIfOccupied(toSquare) == 'w':
-                ValueError("This square is already occupied by same team. Check if stockfish is working correctly")
-            
-            # Update board tracker with new move
-            piece = BoardTracker.addMove(fromSquare, toSquare, 'w')
+            #get current piece
+            currentPiece = board.piece_at(chess.parse_square(toSquare))
+            currentPiece = str(currentPiece)
+            currentPiece = currentPiece.lower()
 
             # Send in move to movement engine
-            arm.move(fromSquare, toSquare, piece)
+            arm.move(fromSquare, toSquare, currentPiece)
 
             # give time to finish any movements before returning to home
             sleep(2)
@@ -138,24 +92,23 @@ def main():
         else:   
             # evaluate best move
             engineResult = engine.play(board, chess.engine.Limit(time=0.1))
+
             # perform computers move on stockfish
             board.push(engineResult.move)
 
             # Get the substring of return from engine of move
             fromSquare = str(engineResult.move.uci)[41:43].upper()
+            fromSquare = fromSquare.lower()
             toSquare = str(engineResult.move.uci)[43:45].upper()
+            toSquare = toSquare.lower()
 
-            # Checks if the board is occupied by opposing team and 
-            if BoardTracker.checkIfOccupied(toSquare) == 'w':
-                arm.remove(toSquare, 'w')
-            elif BoardTracker.checkIfOccupied(toSquare) == 'b':
-                ValueError("This square is already occupied by same team. Check if stockfish is working correctly")
-            
-            # Update board tracker with new move
-            piece = BoardTracker.addMove(fromSquare, toSquare, 'b')
+            #get current piece
+            currentPiece = board.piece_at(chess.parse_square(toSquare))
+            currentPiece = str(currentPiece)
+            currentPiece = currentPiece.lower()
 
             # Send in move to movement engine
-            arm.move(fromSquare, toSquare, piece)
+            arm.move(fromSquare, toSquare, currentPiece)
 
             # Give time to finish any movements before returning to home
             sleep(2)
