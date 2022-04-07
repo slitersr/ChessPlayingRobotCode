@@ -1,6 +1,7 @@
 import RPi.GPIO as GPIO
 from Ax12 import Ax12
 from time import sleep
+from pynput import keyboard
 
 class Gripper():
     def __init__(self):
@@ -22,6 +23,18 @@ class Gripper():
         del p
         self.previous_z = z
 
+def on_press(key):
+    if key == keyboard.Key.esc:
+        return False  # stop listener
+    try:
+        k = key.char  # single-char keys
+    except:
+        k = key.name  # other keys
+    if k in ['up', 'down', 'left', 'right']:  # keys of interest
+        # self.keys.append(k)  # store it in global-like variable
+        print('Key pressed: ' + k)
+
+
 def user_input():
     """Check to see if user wants to continue"""
     ans = input('Continue? : y/n ')
@@ -35,7 +48,7 @@ def main(joint_1_object, joint_2_object, gripper):
     bool_loop = True
     while bool_loop:
         
-        option = int(input("1. Joint 1 \n2. Joint 2\n3. Actuator \n4. Magnet \n5. Exit\n\nEnter: "))
+        option = int(input("1. Joint 1 \n2. Joint 2\n3. Actuator \n4. Magnet \n5.  ArrowControl \n6. Exit\n\nEnter: "))
                            
         if option == 1:
             joint1_option = int(input("1. Move \n2. Torque\n3. Position\n4. Back\n\nEnter: "))
@@ -106,6 +119,12 @@ def main(joint_1_object, joint_2_object, gripper):
             Ax12.disconnect()
             GPIO.cleanup()
             bool_loop = false
+
+        elif option == 6:
+            listener = keyboard.Listener(on_press=on_press)
+            listener.start()  # start to listen on a separate thread
+            listener.join()  # remove if main thread is polling self.keys
+
         else:
             print("Incorrect input. Try again")
             
