@@ -193,7 +193,7 @@ class Arm:
         
         # maybe make this according to distance rather than constant time so its more efficient
         sleep(5)
-        
+
         #
         self.gripper.pickup(piece, startSquare)
 
@@ -202,6 +202,15 @@ class Arm:
         joint_2.set_goal_position(boardPositions.joint2_table[row_end][col_end])
         
         self.gripper.dropoff(piece, finishSquare)
+        
+
+
+
+        
+
+
+
+
         
     def testMove(self, startSquare):
         col_start = ord(startSquare[0]) - 64 - 1

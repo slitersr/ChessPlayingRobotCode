@@ -31,9 +31,15 @@ def main():
     arm.init(gripper)
     arm.calibrate()
         
+    ####PLAYER WILL ALWAYS PLAY AS WHITE
 
     #while game is not over, keep looping
-    while (not board.is_game_over()) and (not board.is_checkmate()) and (not board.is_stalemate()):
+    while (not board.is_game_over()):
+
+        #reset these indicators on each move
+        capture = False
+        queenSideCastling = False
+        kingSideCastling = False
 
         # players turn: enter move and it will be played by arm
         if(playerTurn):
@@ -62,11 +68,8 @@ def main():
                 continue
             
 
-
-
             #store current move in move variable to check conditions
             move = board.push_san(playerMoveTextEdited) # if not working change parse_san() to push_san()
-
 
             #determine if it is a capturing move, need arm to remove captured piece
             if(board.is_capture(move)):
@@ -74,17 +77,20 @@ def main():
             else:
                 capture = False
 
-            # #determine if it is a castling move, need arm to handle this special case (move both king and rook)
-            # if(board.is_castling(move)):
-            #     castling = True
-            # else:
-            #     castling = False
+            #determine if it is a castling move, need arm to handle this special case (move both king and rook)
+            if(board.is_kingside_castling(move)):
+                kingSideCastling = True
+            elif (board.is_queenside_castling(move)):
+                queenSideCastling = True
+            else:
+                kingSideCastling = False
+                queenSideCastling = False
             
-            # #determine if it is a en passant move, need arm to handle this special case
-            # if(board.is_en_passant(move)):
-            #     enPassant = True
-            # else:
-            #     enPassant = False
+            #determine if it is a en passant move, need arm to handle this special case
+            if(board.is_en_passant(move)):
+                enPassant = True
+            else:
+                enPassant = False
 
                 
             # perform players move on stockfish
@@ -101,8 +107,25 @@ def main():
             currentPiece = str(currentPiece)
             currentPiece = currentPiece.lower()
 
-            # Send in move to movement engine
-            arm.move(fromSquare, toSquare, currentPiece)
+            #handle special cases of captures, castling, and en passant
+            if (capture):
+                arm.remove() #remove piece at toSquare
+                arm.move(fromSquare, toSquare, currentPiece) # move piece at fromSquare to toSquare
+            elif(kingSideCastling):
+                arm.move('e1', 'g1', 'k') # move king
+                arm.move('h1', 'f1', 'r') # move rook
+            elif(queenSideCastling):
+                arm.move('e1', 'c1', 'k') # move king
+                arm.move('a1', 'd1', 'r') # move rook
+            elif(enPassant):
+                tempSplit = [char for char in toSquare]
+                removeSquare = str(tempSplit[0]) + str(int(tempSplit[1]) + 1) 
+                arm.remove() #remove piece at removeSquare
+                arm.move(fromSquare, toSquare, currentPiece) # move piece at fromSquare to toSquare
+            else:
+                # Send in move to movement engine
+                arm.move(fromSquare, toSquare, currentPiece)
+
 
             # give time to finish any movements before returning to home
             sleep(2)
@@ -119,6 +142,28 @@ def main():
             # evaluate best move
             engineResult = engine.play(board, chess.engine.Limit(time=0.1))
 
+            #determine if it is a capturing move, need arm to remove captured piece
+            if(board.is_capture(engineResult.move)):
+                capture = True
+            else:
+                capture = False
+
+            #determine if it is a castling move, need arm to handle this special case (move both king and rook)
+            if(board.is_kingside_castling(engineResult.move)):
+                kingSideCastling = True
+            elif (board.is_queenside_castling(engineResult.move)):
+                queenSideCastling = True
+            else:
+                kingSideCastling = False
+                queenSideCastling = False
+            
+            # #determine if it is a en passant move, need arm to handle this special case
+            # if(board.is_en_passant(engineResult.move)):
+            #     enPassant = True
+            # else:
+            #     enPassant = False
+
+
             # perform computers move on stockfish
             board.push(engineResult.move)
 
@@ -133,8 +178,25 @@ def main():
             currentPiece = str(currentPiece)
             currentPiece = currentPiece.lower()
 
-            # Send in move to movement engine
-            arm.move(fromSquare, toSquare, currentPiece)
+
+            #handle special cases of captures, castling, and en passant
+            if (capture):
+                arm.remove() #remove piece at toSquare
+                arm.move(fromSquare, toSquare, currentPiece) # move piece at fromSquare to toSquare
+            elif(kingSideCastling):
+                arm.move('e8', 'g8', 'k') # move king 
+                arm.move('h8', 'f8', 'r') # move rook
+            elif(queenSideCastling):
+                arm.move('e8', 'c8', 'k') # move king
+                arm.move('a8', 'd8', 'r') # move rook 
+            elif(enPassant):
+                tempSplit = [char for char in toSquare]
+                removeSquare = str(tempSplit[0]) + str(int(tempSplit[1]) - 1) 
+                arm.remove() #remove piece at removeSquare
+                arm.move(fromSquare, toSquare, currentPiece) # move piece at fromSquare to toSquare
+            else:
+                # Send in move to movement engine
+                arm.move(fromSquare, toSquare, currentPiece)
 
             # Give time to finish any movements before returning to home
             sleep(2)
@@ -147,12 +209,16 @@ def main():
 
 
     #ending game message
-    if (board.is_game_over()):
-        print("Game is a draw!")
-    elif (board.is_checkmate()):
+    if (board.is_checkmate()):
         print("Checkmate!")
     elif (board.is_stalemate()):
-        print("Stalemate, game is a draw!")
+        print("Draw, stalemate!")
+    elif (board.is_insufficient_material()):
+        print("Draw, insufficeint material!")
+    elif (board.is_fivefold_repetition()):
+        print("Draw, repetition of moves!")
+    elif (board.is_seventyfive_moves()):
+        print("Draw, 75 move rule!")
 
 
     gripper.cleanup()
