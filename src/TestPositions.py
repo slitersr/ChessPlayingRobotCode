@@ -25,7 +25,7 @@ def main(gripper, arm):
                 arm.testMove(square)
                 gripper.pickup(piece, square)
                 arm.testMove(positions[i+1])
-                gripper.dropoff(piece, square)
+                gripper.dropoff(piece, positions[i+1])
                 sleep(2)
                 i += 1
                 

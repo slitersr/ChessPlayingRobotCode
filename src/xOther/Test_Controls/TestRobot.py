@@ -1,6 +1,9 @@
 import RPi.GPIO as GPIO
 from Ax12 import Ax12
 from time import sleep
+from pynput import keyboard
+
+lastPosition = 512
 
 class Gripper():
     def __init__(self):
@@ -22,6 +25,35 @@ class Gripper():
         del p
         self.previous_z = z
 
+def on_press(key):
+#     test = lastPosition
+#     
+#     while True:
+#         if keyboard.is_pressed('w'):
+#              test = test - 10
+#              print('positon now is: ' + test)
+#          
+#     lastPositon = test
+
+    global lastPosition
+
+    if key == keyboard.Key.esc:
+        return False  # stop listener
+    try:
+        k = key.char  # single-char keys
+    except:
+        k = key.name  # other keys
+        
+    if k in ['up', 'down', 'left', 'right']:  # keys of interest
+        # self.keys.append(k)  # store it in global-like variable
+        if k == 'up':
+            lastPosition = lastPosition + 10
+        elif k == 'down':
+            lastPosition = lastPosition - 10
+            
+        joint_1.set_goal_position(lastPosition)
+        print('Key pressed: ' + k)
+
 def user_input():
     """Check to see if user wants to continue"""
     ans = input('Continue? : y/n ')
@@ -35,10 +67,10 @@ def main(joint_1_object, joint_2_object, gripper):
     bool_loop = True
     while bool_loop:
         
-        option = int(input("1. Joint 1 \n2. Joint 2\n3. Actuator \n4. Magnet \n5. Exit\n\nEnter: "))
+        option = int(input("1. Joint 1 \n2. Joint 2\n3. Actuator \n4. Magnet \n5. Exit \n6. ArrowControl\n\nEnter: "))
                            
         if option == 1:
-            joint1_option = int(input("1. Move \n2. Torque\n3. Position\n4. Back\n\nEnter: "))
+            joint1_option = int(input("1. Move \n2. Torque\n3. Position\n4. Speed\n5. Back\n\nEnter: "))
             
             if joint1_option == 1:
 #                 joint_1_object.set_moving_speed(100)
@@ -49,6 +81,7 @@ def main(joint_1_object, joint_2_object, gripper):
 
                 # desired angle input joint 1
                 input_pos_1 = int(input("Goal Pos of Joint 1: "))
+                input_test = input_pos_1
                 joint_1_object.set_goal_position(input_pos_1)
                 print("Position of dxl ID: %d is now: %d " %
                       (joint_1_object.id, joint_1_object.get_present_position()))
@@ -60,9 +93,14 @@ def main(joint_1_object, joint_2_object, gripper):
                     joint_1_object.set_torque_enable(False)
             elif joint1_option == 3:
                 print("Position of dxl ID: %d is now: %d " % (joint_2_object.id, joint_2_object.get_present_position()))
+            elif joint1_option == 4:
+                joint_1.print_status("Current speed of ", joint_1.id, joint_1.get_moving_speed())
+                speed = input("Set Speed: ")
+                joint_1.set_moving_speed(int(speed))
+                
                            
         elif option == 2:
-            joint2_option = int(input("1. Move \n2. Torque\n3. Position\n4. Back\n\nEnter: "))
+            joint2_option = int(input("1. Move \n2. Torque\n3. Position\n4. Speed\n5.Back\n\nEnter: "))
             
             if joint2_option == 1:
 #                 joint_2_object.set_moving_speed(100)
@@ -85,6 +123,10 @@ def main(joint_1_object, joint_2_object, gripper):
             elif joint2_option == 3:
                 print("Position of dxl ID: %d is now: %d " %
                       (joint_2_object.id, joint_2_object.get_present_position()))
+            elif joint1_option == 4:
+                joint_2.print_status("Current speed of ", joint_2.id, joint_2.get_moving_speed())
+                speed = input("Set Speed: ")
+                joint_2.set_moving_speed(int(speed))
                            
         elif option == 3:
             z = int(input("Goal Pos of Actuator: "))
@@ -106,6 +148,12 @@ def main(joint_1_object, joint_2_object, gripper):
             Ax12.disconnect()
             GPIO.cleanup()
             bool_loop = false
+            
+        elif option == 6:
+            listener = keyboard.Listener(on_press=on_press)
+            listener.start()  # start to listen on a separate thread
+            listener.join()  # remove if main thread is polling self.keys  
+            
         else:
             print("Incorrect input. Try again")
             
@@ -130,13 +178,13 @@ joint_2 = Ax12(2)
 joint_1.set_return_delay_time(50)
 print("Return delay:", joint_1.get_return_delay_time())
 
-joint_1.set_moving_speed(200)
+joint_1.set_moving_speed(150)
 joint_1.print_status("Moving speed of ", joint_1.id, joint_1.get_moving_speed())
 
 joint_2.set_return_delay_time(50)
 print("Return delay:", joint_2.get_return_delay_time())
 
-joint_2.set_moving_speed(200)
+joint_2.set_moving_speed(150)
 joint_2.print_status("Moving speed of ", joint_2.id, joint_2.get_moving_speed())
 
 # - GPIO SETUP - (gripper)
