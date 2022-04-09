@@ -16,7 +16,7 @@ magnet_pin = 16
 
 class Gripper():
     # Piece Heights
-    piece_heights = "{'k': 70, 'q': 70, 'r': 70, 'b': 70, 'k': 70, 'p': 60}"
+    piece_heights = "{'k': 70, 'q': 61, 'r': 70, 'b': 70, 'k': 70, 'p': 58}"
     
     dict_piece_heights = eval(piece_heights)
     
@@ -65,7 +65,7 @@ class Gripper():
         self.move(piece_height)
         sleep(0.4)
         self.electromagnet(True)
-        sleep(0.4)
+        sleep(1)
         self.move(RESTING_HEIGHT)
         sleep(1)
 
@@ -79,7 +79,7 @@ class Gripper():
         self.move(piece_height)
         sleep(0.4)
         self.electromagnet(False)
-        sleep(0.4)
+        sleep(0.2)
         self.move(RESTING_HEIGHT)
         sleep(1)
 
@@ -106,11 +106,11 @@ class Arm:
         
     def calibrate(self):
         print("Calibrating arm control...")
-        joint_1.set_moving_speed(120)
-        joint_2.set_moving_speed(120)
+        joint_1.set_moving_speed(80)
+        joint_2.set_moving_speed(80)
 
-        joint_1.set_moving_speed(120)
-        joint_2.set_moving_speed(120)
+        joint_1.set_moving_speed(80)
+        joint_2.set_moving_speed(80)
 
         # Ensure moving speed was set
         joint_1.print_status("Moving speed of ", joint_1.id, joint_1.get_moving_speed())
@@ -175,7 +175,6 @@ class Arm:
                 currentPosition -= 20
 
     def move(self, startSquare, finishSquare, piece):
-        print(piece)
         col_start = ord(startSquare[0]) - 64 - 1
         row_start = int(startSquare[1]) - 1        
 
@@ -186,14 +185,19 @@ class Arm:
         sleep(.1)
         joint_2.set_goal_position(boardPositions.joint2_table[row_start][col_start])
         
-        # maybe make this according to distance rather than constant time so its more efficient
-        sleep(5)
+        self.calculateSleepTime(startSquare)
         
         self.gripper.pickup(piece, startSquare)
+        
+        sleep(sleepTime)
 
         joint_1.set_goal_position(boardPositions.joint1_table[row_end][col_end])
         sleep(.1)
         joint_2.set_goal_position(boardPositions.joint2_table[row_end][col_end])
+        
+        sleepTime = self.calculateSleepTime(finishSquare)
+        
+        sleep(sleepTime)
         
         self.gripper.dropoff(piece, finishSquare)
         
@@ -207,36 +211,104 @@ class Arm:
         
         sleep(5)
 
-    def remove(self, gripper, sqaure, team):
+    def remove(self, sqaure, team, piece):
         col = ord(sqaure[0]) - 64 - 1
         row = int(sqaure[1]) - 1
 
         joint_1.set_goal_position(boardPositions.joint1_table[row][col])
         sleep(.1)
         joint_2.set_goal_position(boardPositions.joint2_table[row][col])
-
-        # COMBINE ALL THIS TO PERFORM PICKUP/DROPOFF
-
-        # Magnet Off
-
-        # Actuator Down
-
-        # Magnet On
-
-        # Actuator On
         
-        # MOVE TO TEAM KILLZONE
+        sleepTime = calculateSleepTimePositions(square)
+        
+        sleep(sleepTime)
 
-        # Actuator Down
-
-        # Magnet Off
-
-        # Actuator Up
+        gripper.pickup(piece)
+        
+        i = 0
+        if team == 'w':
+            while kill_w[i] == 0 and i < 10:
+                if kill_w[i] != 0:
+                    kill_w[i] = 1
+                    joint_1.set_goal_position(boardPositions.kill_w_joint_1[i])
+                    sleep(.1)
+                    joint_2.set_goal_position(boardPositions.kill_w_joint_2[i])
+                i = i + 1
+        else:
+            while kill_b[i] == 0 and i < 10:
+                if kill_b[i] != 0:
+                    kill_b[i] = 1
+                    joint_1.set_goal_position(boardPositions.kill_b_joint_1[i])
+                    sleep(.1)
+                    joint_2.set_goal_position(boardPositions.kill_b_joint_2[i])
+                i = i + 1
+        
+        sleep(4)
+        
+        gripper.dropoff(piece)
+        self.returnHome()
+        
+    def calculateSleepTimeSquares(start, end)
+        start_col = ord(start[0]) - 64 - 1
+        start_row = int(start[1]) - 1
+        
+        end_col = ord(end[0]) - 64 - 1
+        end_row = int(end[1]) - 1
+        
+        start = start_col + start_row
+        end = end_col + end_row
+        
+        time = abs(start-end) / 2
+        
+        if time < 3
+            time = 3
+        elif time > 6
+            time = 6
+            
+        return time
+    
+            
+    def calculateSleepTimePositions(endSquare)
+        start_1 = joint_1.get_present_position()
+        start_2 = joint_1.get_present_position()
+        
+        end_col = ord(endSquare[0]) - 64 - 1
+        end_row = int(endSquare[1]) - 1
+        
+        end_1 = boardPositions.joint1_table[end_row][end_col]
+        end_2 = boardPositions.joint2_table[end_row][end_col]
+        
+        time1 = abs(start_1 - end_1)
+        time2 = abs(start_2 - end_2)
+        
+        time = (time_1 + time_2) / 300
+        
+        if time < 3
+            time = 3
+        elif time > 6
+            time = 6
+            
+        return time
 
     def returnHome(self):
         # Ensure Actuator is up
         joint_1.set_goal_position(1023)
         joint_2.set_goal_position(0)
+        
+    def killKing(square)
+        col = ord(square[0]) - 64 - 1
+        row = int(square[1]) - 1
+        
+        joint_1.set_goal_position(boardPositions.joint1_table[row][col])
+        sleep(.1)
+        joint_2.set_goal_position(boardPositions.joint2_table[row][col])
+        
+        sleepTime = calculateSleepTimePositions(square)
+        
+        sleep(sleepTime)
+        
+        gripper.pickup('k', square)
+        gripper.electromagnet(false)
 
     def dance(self, gripper):
         joint_1.set_moving_speed(600)

@@ -7,6 +7,12 @@ import chess
 import chess.engine
 import waitForInput
 
+def checkIfCanBeFixed(playerInput):
+    if playerInput == 'f2f for':
+        return 'F2 F4'
+    else:
+        return playerInput
+
 def main():
 
     #SimpleEngine spawns event loop and creates engine instance using stockfish.exe
@@ -45,65 +51,26 @@ def main():
                 try:
                     response = input("Press enter to start recording...")
                     
-                    if response == 1:
+                    if response == '1':
                         playerMoveText = input("Enter move: ")                       
                     else:
                         playerMoveText = waitForInput.microphoneReady()
+                                            
+                    #Check If Fixed
+                    playerMoveText = checkIfCanBeFixed(playerMoveText)
+                  
+                    print(playerMoveText)
                         
                     playerMoveTextEdited = playerMoveText.lower()
                     playerMoveTextEdited = playerMoveTextEdited.replace(' ', '')
                         
-#                     if len(playerMoveText) > 5 or len(playerMoveText) < 5:
-#                         print("Incorrect input. Try again.")
                     if chess.Move.from_uci(playerMoveTextEdited) not in board.legal_moves:
                         print("Illegal move. Try again.")
                     else:
                         invalidInput = False
                 except BaseException as e:
-                    print("Incorrect input. Try again.")
+                    print("Invalid input. Try again.")
                 continue
-
-                
-#             response = input("Press enter to start recording...")
-#             
-#             if response == 1:
-#                 #read input from user
-#                 playerMoveText = input("Enter move: ")                       
-#             else:
-#                 playerMoveText = waitForInput.microphoneReady()
-#                 
-#             #make lowercase text
-#             playerMoveTextEdited = playerMoveText.lower()
-#             #get rid of any whitespace in voice inputted string
-#             playerMoveTextEdited = playerMoveTextEdited.replace(' ', '')
-# 
-#             #while loop below handles incorrect input
-#             legalPlayerInput = False
-#             while(not legalPlayerInput):
-#                 try:
-#                     #if player inputted move is not legal then loop back and ask for move again
-#                     if(chess.Move.from_uci(playerMoveTextEdited) not in board.legal_moves):
-#                         response = input("Illegal move, press enter to start recording again...")
-#                         if response == 1:
-#                             #read input from user
-#                             playerMoveText = input("Enter move: ")                       
-#                         else:
-#                             playerMoveText = waitForInput.microphoneReady()
-#                         playerMoveTextEdited = playerMoveText.lower()
-#                         playerMoveTextEdited = playerMoveTextEdited.replace(' ', '')
-#                     else:
-#                         legalPlayerInput = True
-#                 except BaseException as e:
-#                     response = input("Incorrect input, press enter to start recording again...")
-#                     if response == 1:
-#                         #read input from user
-#                         playerMoveText = input("Enter move: ")                       
-#                     else:
-#                         playerMoveText = waitForInput.microphoneReady()
-#                     playerMoveTextEdited = playerMoveText.lower()
-#                     playerMoveTextEdited = playerMoveTextEdited.replace(' ', '')
-#                     continue
-#                 break
                 
             # perform players move on stockfish
             board.push_san(playerMoveTextEdited)
@@ -120,6 +87,9 @@ def main():
             
             # Update board tracker with new move
             piece = BoardTracker.addMove(fromSquare, toSquare, 'w')
+            
+            #if(capture):
+            #    arm.remove()
 
             # Send in move to movement engine
             arm.move(fromSquare, toSquare, piece)
@@ -166,21 +136,31 @@ def main():
 
             playerTurn = True
 
-
-    #ending game message
-    if (board.is_game_over()):
-        print("Game is a draw!")
-    elif (board.is_checkmate()):
-        print("Checkmate!")
-    elif (board.is_stalemate()):
-        print("Stalemate, game is a draw!")
+        #ending game message
+        if board.is_check():
+            print("Check!")
+        elif board.is_draw():
+            print("Draw!")
+        elif board.is_checkmate():
+    #         if playerTurn:
+            print("Checkmate!")
+    #         position = board.playerKingPosition
+    #         arm.killKing(position)
+    #         arm.Dance()
+    #         else:
+    #         position = board.computerKingPosition
+    #         arm.killKing(position)
+    #         else:
+            
+        elif board.is_stalemate():
+            print("Stalemate, game is a draw!")
+            arm.returnHome()
 
 
     gripper.cleanup()
     arm.shutdown()
     #end of the game
     engine.quit()
-
 
 
 main()
