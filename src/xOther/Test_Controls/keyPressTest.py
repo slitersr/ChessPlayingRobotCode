@@ -21,11 +21,3 @@ listener = keyboard.Listener(on_press=on_press)
 listener.start()  # start to listen on a separate thread
 listener.join()  # remove if main thread is polling self.keys
 
-
-
-
-
-
-
-
-

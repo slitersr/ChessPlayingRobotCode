@@ -6,6 +6,12 @@ import chess
 import chess.engine
 import waitForInput
 
+def checkIfCanBeFixed(playerInput):
+    if playerInput == 'f2f for':
+        return 'F2 F4'
+    else:
+        return playerInput
+
 
 def main():
 
@@ -41,6 +47,10 @@ def main():
         queenSideCastling = False
         kingSideCastling = False
 
+
+        if board.is_check():
+            print("Check!")
+
         # players turn: enter move and it will be played by arm
         if(playerTurn):
             
@@ -51,11 +61,15 @@ def main():
                     response = input("Press enter to start recording...")
                     
                     #dev tool for inputting move through keyboard by inputting '1'
-                    if response == 1:
+                    if response == '1':
                         playerMoveText = input("Enter move: ")                       
                     else:
                         playerMoveText = waitForInput.microphoneReady()
-                        
+
+                    #Check If Fixed
+                    playerMoveText = checkIfCanBeFixed(playerMoveText)
+                    print(playerMoveText)
+
                     playerMoveTextEdited = playerMoveText.lower()
                     playerMoveTextEdited = playerMoveTextEdited.replace(' ', '')
                         
@@ -64,7 +78,7 @@ def main():
                     else:
                         invalidInput = False
                 except BaseException as e:
-                    print("Incorrect input. Try again.")
+                    print("Invalid input. Try again.")
                 continue
             
 
