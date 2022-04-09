@@ -1,4 +1,5 @@
 from distutils.errors import UnknownFileError
+from boardTracker import BoardTracker
 from robot import Arm
 from robot import Gripper
 from time import sleep
@@ -6,6 +7,11 @@ import chess
 import chess.engine
 import waitForInput
 
+def checkIfCanBeFixed(playerInput):
+    if playerInput == 'f2f for':
+        return 'F2 F4'
+    else:
+        return playerInput
 
 def main():
 
@@ -31,15 +37,10 @@ def main():
     arm.init(gripper)
     arm.calibrate()
         
-    ####PLAYER WILL ALWAYS PLAY AS WHITE
+    boardTracker = BoardTracker()
 
     #while game is not over, keep looping
-    while (not board.is_game_over()):
-
-        #reset these indicators on each move
-        capture = False
-        queenSideCastling = False
-        kingSideCastling = False
+    while (not board.is_game_over()) and (not board.is_checkmate()) and (not board.is_stalemate()):
 
         # players turn: enter move and it will be played by arm
         if(playerTurn):
@@ -50,11 +51,15 @@ def main():
                 try:
                     response = input("Press enter to start recording...")
                     
-                    #dev tool for inputting move through keyboard by inputting '1'
-                    if response == 1:
+                    if response == '1':
                         playerMoveText = input("Enter move: ")                       
                     else:
                         playerMoveText = waitForInput.microphoneReady()
+                                            
+                    #Check If Fixed
+                    playerMoveText = checkIfCanBeFixed(playerMoveText)
+                  
+                    print(playerMoveText)
                         
                     playerMoveTextEdited = playerMoveText.lower()
                     playerMoveTextEdited = playerMoveTextEdited.replace(' ', '')
@@ -64,68 +69,30 @@ def main():
                     else:
                         invalidInput = False
                 except BaseException as e:
-                    print("Incorrect input. Try again.")
+                    print("Invalid input. Try again.")
                 continue
-            
-
-            #store current move in move variable to check conditions
-            move = board.push_san(playerMoveTextEdited) # if not working change parse_san() to push_san()
-
-            #determine if it is a capturing move, need arm to remove captured piece
-            if(board.is_capture(move)):
-                capture = True
-            else:
-                capture = False
-
-            #determine if it is a castling move, need arm to handle this special case (move both king and rook)
-            if(board.is_kingside_castling(move)):
-                kingSideCastling = True
-            elif (board.is_queenside_castling(move)):
-                queenSideCastling = True
-            else:
-                kingSideCastling = False
-                queenSideCastling = False
-            
-            #determine if it is a en passant move, need arm to handle this special case
-            if(board.is_en_passant(move)):
-                enPassant = True
-            else:
-                enPassant = False
-
                 
             # perform players move on stockfish
             board.push_san(playerMoveTextEdited)
 
-            #Get the substrings for player move
+            # here is where we would move the physical board peice
             fromSquare = playerMoveText.split(' ')[0]
-            fromSquare = fromSquare.lower()
             toSquare = playerMoveText.split(' ')[1]
-            toSquare = toSquare.lower()
 
-            #get current piece
-            currentPiece = board.piece_at(chess.parse_square(toSquare))
-            currentPiece = str(currentPiece)
-            currentPiece = currentPiece.lower()
+            # Checks if the board is occupied by opposing team and 
+            if BoardTracker.checkIfOccupied(toSquare) == 'b':
+                arm.remove(toSquare, 'b')
+            elif BoardTracker.checkIfOccupied(toSquare) == 'w':
+                ValueError("This square is already occupied by same team. Check if stockfish is working correctly")
+            
+            # Update board tracker with new move
+            piece = BoardTracker.addMove(fromSquare, toSquare, 'w')
+            
+            #if(capture):
+            #    arm.remove()
 
-            #handle special cases of captures, castling, and en passant
-            if (capture):
-                arm.remove() #remove piece at toSquare
-                arm.move(fromSquare, toSquare, currentPiece) # move piece at fromSquare to toSquare
-            elif(kingSideCastling):
-                arm.move('e1', 'g1', 'k') # move king
-                arm.move('h1', 'f1', 'r') # move rook
-            elif(queenSideCastling):
-                arm.move('e1', 'c1', 'k') # move king
-                arm.move('a1', 'd1', 'r') # move rook
-            elif(enPassant):
-                tempSplit = [char for char in toSquare]
-                removeSquare = str(tempSplit[0]) + str(int(tempSplit[1]) + 1) 
-                arm.remove() #remove piece at removeSquare
-                arm.move(fromSquare, toSquare, currentPiece) # move piece at fromSquare to toSquare
-            else:
-                # Send in move to movement engine
-                arm.move(fromSquare, toSquare, currentPiece)
-
+            # Send in move to movement engine
+            arm.move(fromSquare, toSquare, piece)
 
             # give time to finish any movements before returning to home
             sleep(2)
@@ -141,62 +108,24 @@ def main():
         else:   
             # evaluate best move
             engineResult = engine.play(board, chess.engine.Limit(time=0.1))
-
-            #determine if it is a capturing move, need arm to remove captured piece
-            if(board.is_capture(engineResult.move)):
-                capture = True
-            else:
-                capture = False
-
-            #determine if it is a castling move, need arm to handle this special case (move both king and rook)
-            if(board.is_kingside_castling(engineResult.move)):
-                kingSideCastling = True
-            elif (board.is_queenside_castling(engineResult.move)):
-                queenSideCastling = True
-            else:
-                kingSideCastling = False
-                queenSideCastling = False
-            
-            # #determine if it is a en passant move, need arm to handle this special case
-            # if(board.is_en_passant(engineResult.move)):
-            #     enPassant = True
-            # else:
-            #     enPassant = False
-
-
             # perform computers move on stockfish
             board.push(engineResult.move)
 
             # Get the substring of return from engine of move
             fromSquare = str(engineResult.move.uci)[41:43].upper()
-            fromSquare = fromSquare.lower()
             toSquare = str(engineResult.move.uci)[43:45].upper()
-            toSquare = toSquare.lower()
 
-            #get current piece
-            currentPiece = board.piece_at(chess.parse_square(toSquare))
-            currentPiece = str(currentPiece)
-            currentPiece = currentPiece.lower()
+            # Checks if the board is occupied by opposing team and 
+            if BoardTracker.checkIfOccupied(toSquare) == 'w':
+                arm.remove(toSquare, 'w')
+            elif BoardTracker.checkIfOccupied(toSquare) == 'b':
+                ValueError("This square is already occupied by same team. Check if stockfish is working correctly")
+            
+            # Update board tracker with new move
+            piece = BoardTracker.addMove(fromSquare, toSquare, 'b')
 
-
-            #handle special cases of captures, castling, and en passant
-            if (capture):
-                arm.remove() #remove piece at toSquare
-                arm.move(fromSquare, toSquare, currentPiece) # move piece at fromSquare to toSquare
-            elif(kingSideCastling):
-                arm.move('e8', 'g8', 'k') # move king 
-                arm.move('h8', 'f8', 'r') # move rook
-            elif(queenSideCastling):
-                arm.move('e8', 'c8', 'k') # move king
-                arm.move('a8', 'd8', 'r') # move rook 
-            elif(enPassant):
-                tempSplit = [char for char in toSquare]
-                removeSquare = str(tempSplit[0]) + str(int(tempSplit[1]) - 1) 
-                arm.remove() #remove piece at removeSquare
-                arm.move(fromSquare, toSquare, currentPiece) # move piece at fromSquare to toSquare
-            else:
-                # Send in move to movement engine
-                arm.move(fromSquare, toSquare, currentPiece)
+            # Send in move to movement engine
+            arm.move(fromSquare, toSquare, piece)
 
             # Give time to finish any movements before returning to home
             sleep(2)
@@ -207,25 +136,31 @@ def main():
 
             playerTurn = True
 
-
-    #ending game message
-    if (board.is_checkmate()):
-        print("Checkmate!")
-    elif (board.is_stalemate()):
-        print("Draw, stalemate!")
-    elif (board.is_insufficient_material()):
-        print("Draw, insufficeint material!")
-    elif (board.is_fivefold_repetition()):
-        print("Draw, repetition of moves!")
-    elif (board.is_seventyfive_moves()):
-        print("Draw, 75 move rule!")
+        #ending game message
+        if board.is_check():
+            print("Check!")
+        elif board.is_draw():
+            print("Draw!")
+        elif board.is_checkmate():
+    #         if playerTurn:
+            print("Checkmate!")
+    #         position = board.playerKingPosition
+    #         arm.killKing(position)
+    #         arm.Dance()
+    #         else:
+    #         position = board.computerKingPosition
+    #         arm.killKing(position)
+    #         else:
+            
+        elif board.is_stalemate():
+            print("Stalemate, game is a draw!")
+            arm.returnHome()
 
 
     gripper.cleanup()
     arm.shutdown()
     #end of the game
     engine.quit()
-
 
 
 main()
